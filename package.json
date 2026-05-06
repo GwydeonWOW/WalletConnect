@@ -45,7 +45,6 @@
       "msgpackr-extract",
       "blake-hash",
       "@stellar/stellar-sdk",
-      "usb",
       "@simplewebauthn/types"
     ]
   }
