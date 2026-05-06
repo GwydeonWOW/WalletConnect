@@ -3,6 +3,7 @@ RUN corepack enable && corepack prepare pnpm@10.33.4 --activate
 WORKDIR /app
 
 FROM base AS deps
+RUN apk add --no-cache python3 build-base
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/domain/package.json packages/domain/
 COPY packages/adapters/package.json packages/adapters/
