@@ -15,12 +15,15 @@ COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages/domain/node_modules ./packages/domain/node_modules
 COPY --from=deps /app/packages/ui/node_modules ./packages/ui/node_modules
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/domain packages/domain
-COPY packages/ui packages/ui
+COPY packages/domain/src packages/domain/src
+COPY packages/domain/package.json packages/domain/
+COPY packages/domain/tsconfig.json packages/domain/
+COPY packages/ui/src packages/ui/src
+COPY packages/ui/package.json packages/ui/
+COPY packages/ui/tsconfig.json packages/ui/
 COPY apps/web apps/web
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm --filter @wallet-connect/domain build \
-    && pnpm --filter @wallet-connect/web build
+RUN cd apps/web && npx next build
 
 FROM node:22-alpine AS runner
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser

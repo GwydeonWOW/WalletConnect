@@ -10,35 +10,28 @@ COPY packages/config/package.json packages/config/
 COPY apps/api/package.json apps/api/
 RUN pnpm install --frozen-lockfile
 
-FROM base AS builder
+FROM base AS runner
+RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser
+WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=deps /app/packages/domain/node_modules ./packages/domain/node_modules
 COPY --from=deps /app/packages/adapters/node_modules ./packages/adapters/node_modules
 COPY --from=deps /app/packages/config/node_modules ./packages/config/node_modules
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/domain packages/domain
-COPY packages/adapters packages/adapters
-COPY packages/config packages/config
-COPY apps/api apps/api
-RUN pnpm --filter @wallet-connect/domain build \
-    && pnpm --filter @wallet-connect/config build \
-    && pnpm --filter @wallet-connect/adapters build \
-    && pnpm --filter @wallet-connect/api build
-
-FROM base AS runner
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser
-WORKDIR /app
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/apps/api/package.json ./
-COPY --from=builder /app/apps/api/prisma ./prisma
-COPY --from=builder /app/packages/domain/dist ./packages/domain/dist
-COPY --from=builder /app/packages/domain/package.json ./packages/domain/
-COPY --from=builder /app/packages/adapters/dist ./packages/adapters/dist
-COPY --from=builder /app/packages/adapters/package.json ./packages/adapters/
-COPY --from=builder /app/packages/config/dist ./packages/config/dist
-COPY --from=builder /app/packages/config/package.json ./packages/config/
+COPY packages/domain/src packages/domain/src
+COPY packages/domain/package.json packages/domain/
+COPY packages/domain/tsconfig.json packages/domain/
+COPY packages/adapters/src packages/adapters/src
+COPY packages/adapters/package.json packages/adapters/
+COPY packages/adapters/tsconfig.json packages/adapters/
+COPY packages/config/src packages/config/src
+COPY packages/config/package.json packages/config/
+COPY packages/config/tsconfig.json packages/config/
+COPY apps/api/src apps/api/src
+COPY apps/api/package.json apps/api/
+COPY apps/api/tsconfig.json apps/api/
+COPY apps/api/prisma apps/api/prisma
 USER appuser
 EXPOSE 3001
-CMD ["node", "dist/server.js"]
+CMD ["npx", "tsx", "apps/api/src/server.ts"]
