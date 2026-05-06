@@ -1,0 +1,115 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+      POSTGRES_DB: ${POSTGRES_DB:-walletconnect}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  redis:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD required}
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  api:
+    image: ghcr.io/${GITHUB_REPOSITORY:-walletconnect}/api:${TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-walletconnect}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      COINGECKO_API_KEY: ${COINGECKO_API_KEY:-}
+      COINGECKO_BASE_URL: ${COINGECKO_BASE_URL:-https://api.coingecko.com/api/v3}
+      ZERION_API_KEY: ${ZERION_API_KEY:-}
+      ZERION_BASE_URL: ${ZERION_BASE_URL:-https://api.zerion.io/v1}
+      SOLANA_RPC_URL: ${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
+      SUI_RPC_URL: ${SUI_RPC_URL:-https://fullnode.mainnet.sui.io:443}
+      WEBAUTHN_RP_NAME: ${WEBAUTHN_RP_NAME:-Wallet Connect}
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-localhost}
+      WEBAUTHN_ORIGIN: ${WEBAUTHN_ORIGIN:-http://localhost:3000}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET required}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+      - public
+
+  worker:
+    image: ghcr.io/${GITHUB_REPOSITORY:-walletconnect}/worker:${TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-walletconnect}
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+      COINGECKO_API_KEY: ${COINGECKO_API_KEY:-}
+      COINGECKO_BASE_URL: ${COINGECKO_BASE_URL:-https://api.coingecko.com/api/v3}
+      ZERION_API_KEY: ${ZERION_API_KEY:-}
+      ZERION_BASE_URL: ${ZERION_BASE_URL:-https://api.zerion.io/v1}
+      SOLANA_RPC_URL: ${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}
+      SUI_RPC_URL: ${SUI_RPC_URL:-https://fullnode.mainnet.sui.io:443}
+    networks:
+      - internal
+
+  web:
+    image: ghcr.io/${GITHUB_REPOSITORY:-walletconnect}/web:${TAG:-latest}
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api:3001}
+      NEXT_PUBLIC_WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-localhost}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - internal
+      - public
+
+networks:
+  internal:
+  public:
+
+volumes:
+  pgdata:
+  redisdata:

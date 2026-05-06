@@ -1,0 +1,23 @@
+{
+  "name": "@wallet-connect/ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "@types/node": "^22.0.0",
+    "react": "^19.0.0",
+    "@types/react": "^19.0.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  }
+}

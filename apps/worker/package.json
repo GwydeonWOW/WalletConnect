@@ -1,0 +1,33 @@
+{
+  "name": "@wallet-connect/worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/worker.ts",
+    "build": "tsc",
+    "start": "node dist/worker.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.0.0",
+    "@wallet-connect/domain": "workspace:*",
+    "@wallet-connect/adapters": "workspace:*",
+    "@wallet-connect/config": "workspace:*",
+    "bullmq": "^5.0.0",
+    "decimal.js": "^10.5.0",
+    "ioredis": "^5.4.0",
+    "pino": "^9.6.0",
+    "pino-pretty": "^13.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0",
+    "vitest": "^2.1.0"
+  }
+}

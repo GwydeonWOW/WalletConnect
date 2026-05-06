@@ -1,0 +1,45 @@
+{
+  "name": "@wallet-connect/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@wallet-connect/domain": "workspace:*",
+    "@wallet-connect/ui": "workspace:*",
+    "@mysten/dapp-kit": "^1.0.4",
+    "@mysten/sui": "^2.16.0",
+    "@solana/wallet-adapter-base": "^0.9.23",
+    "@solana/wallet-adapter-react": "^0.15.39",
+    "@solana/wallet-adapter-react-ui": "^0.9.35",
+    "@solana/wallet-adapter-wallets": "^0.19.32",
+    "@tanstack/react-query": "^5.0.0",
+    "@simplewebauthn/browser": "^13.0.0",
+    "next": "^15.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.15.0",
+    "viem": "^2.0.0",
+    "wagmi": "^2.0.0",
+    "zustand": "^5.0.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.8.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "postcss": "^8.5.0",
+    "vitest": "^2.1.0"
+  }
+}
