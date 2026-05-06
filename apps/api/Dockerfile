@@ -12,20 +12,33 @@ RUN pnpm install --frozen-lockfile
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN pnpm --filter @wallet-connect/domain build
-RUN pnpm --filter @wallet-connect/config build
-RUN pnpm --filter @wallet-connect/adapters build
-RUN pnpm --filter @wallet-connect/api build
-RUN pnpm prune --prod
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=deps /app/packages/domain/node_modules ./packages/domain/node_modules
+COPY --from=deps /app/packages/adapters/node_modules ./packages/adapters/node_modules
+COPY --from=deps /app/packages/config/node_modules ./packages/config/node_modules
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/domain packages/domain
+COPY packages/adapters packages/adapters
+COPY packages/config packages/config
+COPY apps/api apps/api
+RUN pnpm --filter @wallet-connect/domain build \
+    && pnpm --filter @wallet-connect/config build \
+    && pnpm --filter @wallet-connect/adapters build \
+    && pnpm --filter @wallet-connect/api build
 
 FROM base AS runner
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser
+WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/api/dist ./dist
 COPY --from=builder /app/apps/api/package.json ./
-COPY --from=builder /app/packages ./packages
-COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/apps/api/prisma ./prisma
+COPY --from=builder /app/packages/domain/dist ./packages/domain/dist
+COPY --from=builder /app/packages/domain/package.json ./packages/domain/
+COPY --from=builder /app/packages/adapters/dist ./packages/adapters/dist
+COPY --from=builder /app/packages/adapters/package.json ./packages/adapters/
+COPY --from=builder /app/packages/config/dist ./packages/config/dist
+COPY --from=builder /app/packages/config/package.json ./packages/config/
 USER appuser
 EXPOSE 3001
 CMD ["node", "dist/server.js"]
