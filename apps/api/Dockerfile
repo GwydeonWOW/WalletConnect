@@ -7,7 +7,10 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY packages/domain/package.json packages/domain/
 COPY packages/adapters/package.json packages/adapters/
 COPY packages/config/package.json packages/config/
+COPY packages/ui/package.json packages/ui/
 COPY apps/api/package.json apps/api/
+COPY apps/worker/package.json apps/worker/
+COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile
 
 FROM base AS runner
