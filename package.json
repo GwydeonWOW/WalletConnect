@@ -19,6 +19,12 @@
     "db:seed": "pnpm --filter @wallet-connect/api db:seed",
     "db:reset": "pnpm --filter @wallet-connect/api db:reset"
   },
+  "devDependencies": {
+    "eslint": "^9.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "typescript": "^5.8.0"
+  },
   "engines": {
     "node": ">=22.0.0",
     "pnpm": ">=10.0.0"

@@ -18,17 +18,17 @@
     "db:reset": "prisma migrate reset --force"
   },
   "dependencies": {
-    "@prisma/client": "^6.0.0",
-    "@simplewebauthn/server": "^13.0.0",
-    "@wallet-connect/domain": "workspace:*",
-    "@wallet-connect/adapters": "workspace:*",
-    "@wallet-connect/config": "workspace:*",
     "@fastify/cookie": "^11.0.0",
     "@fastify/cors": "^11.0.0",
     "@fastify/csrf-protection": "^7.0.0",
-    "@fastify/rate-limit": "^10.0.0",
     "@fastify/helmet": "^13.0.0",
+    "@fastify/rate-limit": "^10.0.0",
     "@fastify/secure-session": "^8.0.0",
+    "@prisma/client": "^6.0.0",
+    "@simplewebauthn/server": "^13.0.0",
+    "@wallet-connect/adapters": "workspace:*",
+    "@wallet-connect/config": "workspace:*",
+    "@wallet-connect/domain": "workspace:*",
     "bullmq": "^5.0.0",
     "decimal.js": "^10.5.0",
     "fastify": "^5.0.0",
@@ -38,9 +38,9 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
     "@simplewebauthn/types": "^12.0.0",
-    "prisma": "^6.0.0",
+    "@types/node": "^22.0.0",
+    "prisma": "6.19.3",
     "tsx": "^4.19.0",
     "typescript": "^5.8.0",
     "vitest": "^2.1.0"
