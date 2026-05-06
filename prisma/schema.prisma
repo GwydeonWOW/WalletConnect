@@ -1,0 +1,232 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Ecosystem {
+  evm
+  solana
+  sui
+}
+
+enum WalletSource {
+  zerion
+  solflare
+  suiet
+}
+
+enum AddressStatus {
+  active
+  inactive
+  archived
+}
+
+enum SyncStatus {
+  queued
+  running
+  succeeded
+  failed
+  partial
+}
+
+enum PriceSource {
+  coingecko
+  adapter
+  last_known_good
+  none
+}
+
+enum FlowClass {
+  external_contribution
+  external_withdrawal
+  internal_transfer
+  reward
+  airdrop
+  fee
+  unknown
+}
+
+model User {
+  id               String                @id @default(cuid())
+  email            String?               @unique
+  locale           String                @default("es-ES")
+  timezone         String                @default("Europe/Madrid")
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  trackedAddresses TrackedAddress[]
+  dailySnapshots   PortfolioSnapshotDaily[]
+  flowEvents       FlowEvent[]
+  syncJobs         SyncJob[]
+
+  // WebAuthn credentials
+  passkeyCredentials PasskeyCredential[]
+}
+
+model PasskeyCredential {
+  id           String   @id @default(cuid())
+  userId       String
+  credentialId String   @unique
+  publicKey    Bytes
+  counter      Int
+  transports   String?
+  deviceType   String?
+  backedUp     Boolean  @default(false)
+  name         String?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model TrackedAddress {
+  id                 String          @id @default(cuid())
+  userId             String
+  ecosystem          Ecosystem
+  walletSource       WalletSource
+  chainRef           String
+  addressRaw         String
+  addressNormalized  String
+  label              String?
+  status             AddressStatus   @default(active)
+  importedAt         DateTime        @default(now())
+  lastSyncedAt       DateTime?
+  lastSeenFromWallet DateTime?
+  metadata           Json?
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentPositions   CurrentPosition[]
+  syncJobs           SyncJob[]
+
+  @@unique([userId, ecosystem, addressNormalized])
+  @@index([userId, status])
+  @@index([ecosystem, chainRef])
+}
+
+model Asset {
+  id           String            @id @default(cuid())
+  canonicalKey String            @unique
+  ecosystem    Ecosystem
+  chainRef     String
+  contractRef  String?
+  symbol       String?
+  name         String?
+  decimals     Int?
+  metadata     Json?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  positions    CurrentPosition[]
+  pricePoints  PricePoint[]
+  flowEvents   FlowEvent[]
+
+  @@index([ecosystem, chainRef])
+  @@index([symbol])
+}
+
+model CurrentPosition {
+  id               String         @id @default(cuid())
+  trackedAddressId String
+  assetId          String
+  quantity         Decimal        @db.Decimal(38, 18)
+  priceUsd         Decimal?       @db.Decimal(38, 18)
+  valueUsd         Decimal?       @db.Decimal(38, 18)
+  priceSource      PriceSource
+  priceAsOf        DateTime?
+  valuationAsOf    DateTime
+  warnings         Json?
+  trackedAddress   TrackedAddress @relation(fields: [trackedAddressId], references: [id], onDelete: Cascade)
+  asset            Asset          @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([trackedAddressId, assetId])
+  @@index([trackedAddressId])
+  @@index([assetId])
+}
+
+model PricePoint {
+  id            String      @id @default(cuid())
+  assetId       String
+  quoteCurrency String      @default("USD")
+  source        PriceSource
+  quotedAt      DateTime
+  price         Decimal     @db.Decimal(38, 18)
+  metadata      Json?
+  asset         Asset       @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@unique([assetId, quoteCurrency, source, quotedAt])
+  @@index([assetId, quotedAt(sort: Desc)])
+}
+
+model PortfolioSnapshotDaily {
+  id                    String   @id @default(cuid())
+  userId                String
+  day                   DateTime
+  bucketStartUtc        DateTime
+  bucketEndUtc          DateTime
+  quoteCurrency         String   @default("USD")
+  netWorth              Decimal  @db.Decimal(38, 18)
+  unpricedValue         Decimal  @db.Decimal(38, 18)
+  externalContributions Decimal  @db.Decimal(38, 18)
+  externalWithdrawals   Decimal  @db.Decimal(38, 18)
+  internalTransfers     Decimal  @db.Decimal(38, 18)
+  fees                  Decimal  @db.Decimal(38, 18)
+  pnlNet                Decimal  @db.Decimal(38, 18)
+  breakdown             Json
+  createdAt             DateTime @default(now())
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, day, quoteCurrency])
+  @@index([userId, day(sort: Desc)])
+}
+
+model FlowEvent {
+  id               String     @id @default(cuid())
+  userId           String
+  trackedAddressId String?
+  assetId          String?
+  occurredAt       DateTime
+  txHash           String?
+  externalId       String
+  direction        String
+  amount           Decimal?   @db.Decimal(38, 18)
+  amountUsd        Decimal?   @db.Decimal(38, 18)
+  feeUsd           Decimal?   @db.Decimal(38, 18)
+  counterparty     String?
+  flowClass        FlowClass
+  internalGroupKey String?
+  confidence       Decimal?   @db.Decimal(5, 4)
+  metadata         Json?
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  user             User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackedAddress   TrackedAddress? @relation(fields: [trackedAddressId], references: [id], onDelete: SetNull)
+  asset            Asset?     @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, externalId])
+  @@index([userId, occurredAt(sort: Desc)])
+  @@index([internalGroupKey])
+  @@index([txHash])
+}
+
+model SyncJob {
+  id               String      @id @default(cuid())
+  userId           String
+  trackedAddressId String?
+  jobType          String
+  status           SyncStatus
+  trigger          String
+  attempts         Int         @default(0)
+  startedAt        DateTime?
+  finishedAt       DateTime?
+  errorCode        String?
+  errorMessage     String?
+  metrics          Json?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackedAddress   TrackedAddress? @relation(fields: [trackedAddressId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+}
