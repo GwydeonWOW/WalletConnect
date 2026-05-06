@@ -44,7 +44,7 @@ export default function DashboardPage() {
       <SyncBanner />
       {overview?.data && <PortfolioHeader overview={overview.data} />}
       {overview?.data && <KpiStrip overview={overview.data} />}
-      {(overview?.data?.warnings?.length ?? 0) > 0 && <WarningsPanel warnings={overview.data!.warnings} />}
+      {overview?.data?.warnings && overview.data.warnings.length > 0 && <WarningsPanel warnings={overview.data.warnings} />}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
           {timeseries?.data && <NetWorthChart data={timeseries.data} />}

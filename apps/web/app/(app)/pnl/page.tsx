@@ -38,7 +38,7 @@ export default function PnlPage() {
         </div>
       )}
 
-      {(daily?.data?.points?.length ?? 0) > 0 && (
+      {daily?.data?.points && daily.data.points.length > 0 && (
         <div className="bg-[var(--bg-card)] rounded-xl p-6 border border-[var(--border)]">
           <h3 className="text-lg font-semibold text-white mb-4">PnL Diario</h3>
           <ResponsiveContainer width="100%" height={400}>
