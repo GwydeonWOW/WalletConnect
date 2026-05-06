@@ -108,7 +108,7 @@ jobs:
           file: apps/${{ matrix.app }}/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}/${{ matrix.app }}:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/${{ matrix.app }}:latest
+            ghcr.io/gwydeonwow/walletconnect-${{ matrix.app }}:${{ github.sha }}
+            ghcr.io/gwydeonwow/walletconnect-${{ matrix.app }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
