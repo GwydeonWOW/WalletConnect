@@ -72,6 +72,18 @@ app.register(rateLimit, {
   allowList: ['127.0.0.1'],
 });
 
+app.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => {
+  if (!body || body === '') {
+    done(null, {});
+    return;
+  }
+  try {
+    done(null, JSON.parse(body as string));
+  } catch (err) {
+    done(err as Error);
+  }
+});
+
 app.addHook('onRequest', requestIdMiddleware);
 app.setErrorHandler(errorHandler);
 

@@ -23,6 +23,8 @@ async function proxyRequest(request: NextRequest, pathSegments: string[]) {
     const body = await request.text();
     if (body) {
       init.body = body;
+    } else {
+      headers.delete('content-type');
     }
   }
 
