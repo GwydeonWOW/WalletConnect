@@ -45,7 +45,8 @@ export function errorHandler(
     return;
   }
 
-  request.log.error(error, 'Unhandled error');
+  request.log.error({ err: error }, 'Unhandled error');
+  console.error('Unhandled error:', error);
   reply.status(500).send({
     error: {
       code: 'INTERNAL_ERROR',

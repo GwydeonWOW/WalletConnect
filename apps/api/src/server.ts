@@ -33,6 +33,7 @@ const app = Fastify({
   logger: false,
   requestIdHeader: 'x-request-id',
   requestIdLogLabel: 'requestId',
+  disableRequestLogging: true,
 });
 
 app.register(helmet, {

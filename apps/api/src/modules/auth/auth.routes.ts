@@ -16,6 +16,7 @@ export async function authRoutes(app: FastifyInstance) {
         meta: { requestId: request.id, servedAt: new Date().toISOString() },
       });
     } catch (err: any) {
+      request.log.error({ err }, 'Failed to generate registration options');
       throw new AppError('INTERNAL_ERROR', 500, err.message);
     }
   });
@@ -67,6 +68,7 @@ export async function authRoutes(app: FastifyInstance) {
         meta: { requestId: request.id, servedAt: new Date().toISOString() },
       });
     } catch (err: any) {
+      request.log.error({ err }, 'Failed to generate login options');
       throw new AppError('INTERNAL_ERROR', 500, err.message);
     }
   });
