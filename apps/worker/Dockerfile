@@ -36,5 +36,7 @@ COPY packages/config/tsconfig.json packages/config/
 COPY apps/worker/src apps/worker/src
 COPY apps/worker/package.json apps/worker/
 COPY apps/worker/tsconfig.json apps/worker/
+COPY apps/api/prisma apps/api/prisma
+RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 USER appuser
 CMD ["tsx", "apps/worker/src/worker.ts"]

@@ -43,7 +43,7 @@ services:
       WEBAUTHN_RP_NAME: '${WEBAUTHN_RP_NAME:-Wallet Connect}'
       WEBAUTHN_RP_ID: '${WEBAUTHN_RP_ID:-localhost}'
       WEBAUTHN_ORIGIN: '${WEBAUTHN_ORIGIN:-http://localhost:3000}'
-      SESSION_SECRET: '${SESSION_SECRET:?SESSION_KEY is required}'
+      SESSION_SECRET: '${SESSION_SECRET:?SESSION_SECRET is required}'
       FRONTEND_URL: '${FRONTEND_URL:-http://localhost:3000}'
     depends_on:
       postgres:

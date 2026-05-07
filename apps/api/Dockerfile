@@ -37,6 +37,7 @@ COPY apps/api/src apps/api/src
 COPY apps/api/package.json apps/api/
 COPY apps/api/tsconfig.json apps/api/
 COPY apps/api/prisma apps/api/prisma
+RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 USER appuser
 EXPOSE 3001
-CMD ["tsx", "apps/api/src/server.ts"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && tsx apps/api/src/server.ts"]
