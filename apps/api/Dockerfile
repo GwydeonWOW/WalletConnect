@@ -13,6 +13,8 @@ COPY apps/api/package.json apps/api/
 COPY apps/worker/package.json apps/worker/
 COPY apps/web/package.json apps/web/
 RUN pnpm install --frozen-lockfile
+COPY apps/api/prisma apps/api/prisma
+RUN cd apps/api && npx prisma generate
 
 FROM base AS runner
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser
@@ -37,7 +39,6 @@ COPY apps/api/src apps/api/src
 COPY apps/api/package.json apps/api/
 COPY apps/api/tsconfig.json apps/api/
 COPY apps/api/prisma apps/api/prisma
-RUN npx prisma generate --schema=apps/api/prisma/schema.prisma
 USER appuser
 EXPOSE 3001
 CMD ["sh", "-c", "npx prisma migrate deploy --schema=apps/api/prisma/schema.prisma && tsx apps/api/src/server.ts"]
