@@ -31,6 +31,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN cd apps/web && npx next build
 
 FROM node:22-alpine AS runner
+RUN apk add --no-cache curl
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1

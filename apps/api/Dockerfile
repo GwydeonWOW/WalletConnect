@@ -17,6 +17,7 @@ COPY apps/api/prisma apps/api/prisma
 RUN cd apps/api && npx prisma generate
 
 FROM base AS runner
+RUN apk add --no-cache curl
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser
 RUN npm install -g tsx@4.19.0 prisma@6.19.3
 WORKDIR /app
