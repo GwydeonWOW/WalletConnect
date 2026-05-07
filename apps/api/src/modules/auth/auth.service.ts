@@ -23,7 +23,7 @@ export class AuthService {
     const options = await generateRegistrationOptions({
       rpID: this.env.WEBAUTHN_RP_ID,
       rpName: this.env.WEBAUTHN_RP_NAME,
-      userID: userId,
+      userID: new TextEncoder().encode(userId),
       userName: userId,
       attestationType: 'none',
       authenticatorSelection: {
