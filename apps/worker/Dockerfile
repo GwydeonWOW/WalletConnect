@@ -16,6 +16,7 @@ RUN pnpm install --frozen-lockfile
 
 FROM base AS runner
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser
+RUN npm install -g tsx@4.19.0
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/worker/node_modules ./apps/worker/node_modules
@@ -36,4 +37,4 @@ COPY apps/worker/src apps/worker/src
 COPY apps/worker/package.json apps/worker/
 COPY apps/worker/tsconfig.json apps/worker/
 USER appuser
-CMD ["node_modules/.bin/tsx", "apps/worker/src/worker.ts"]
+CMD ["tsx", "apps/worker/src/worker.ts"]

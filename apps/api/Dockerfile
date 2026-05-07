@@ -16,6 +16,7 @@ RUN pnpm install --frozen-lockfile
 
 FROM base AS runner
 RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 appuser
+RUN npm install -g tsx@4.19.0
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
@@ -38,4 +39,4 @@ COPY apps/api/tsconfig.json apps/api/
 COPY apps/api/prisma apps/api/prisma
 USER appuser
 EXPOSE 3001
-CMD ["node_modules/.bin/tsx", "apps/api/src/server.ts"]
+CMD ["tsx", "apps/api/src/server.ts"]
