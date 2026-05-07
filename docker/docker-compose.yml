@@ -83,7 +83,7 @@ services:
     image: 'ghcr.io/gwydeonwow/walletconnect-web:latest'
     environment:
       HOSTNAME: '0.0.0.0'
-      NEXT_PUBLIC_API_URL: '${NEXT_PUBLIC_API_URL:-http://api:3001}'
+      API_URL: 'http://api:3001'
     depends_on:
       api:
         condition: service_healthy
