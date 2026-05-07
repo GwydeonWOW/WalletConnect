@@ -54,14 +54,14 @@ services:
       test:
         - CMD
         - wget
-        - '--no-verbose'
-        - '--tries=1'
-        - '--spider'
+        - '-q'
+        - '-O'
+        - '/dev/null'
         - 'http://localhost:3001/health/live'
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 60s
     restart: unless-stopped
   worker:
     image: 'ghcr.io/gwydeonwow/walletconnect-worker:latest'
@@ -92,14 +92,14 @@ services:
       test:
         - CMD
         - wget
-        - '--no-verbose'
-        - '--tries=1'
-        - '--spider'
+        - '-q'
+        - '-O'
+        - '/dev/null'
         - 'http://127.0.0.1:3000/'
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 30s
     restart: unless-stopped
 volumes:
   postgres_data: null
