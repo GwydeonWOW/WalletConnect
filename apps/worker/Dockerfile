@@ -36,4 +36,4 @@ COPY apps/worker/src apps/worker/src
 COPY apps/worker/package.json apps/worker/
 COPY apps/worker/tsconfig.json apps/worker/
 USER appuser
-CMD ["npx", "tsx", "apps/worker/src/worker.ts"]
+CMD ["node_modules/.bin/tsx", "apps/worker/src/worker.ts"]

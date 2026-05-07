@@ -38,4 +38,4 @@ COPY apps/api/tsconfig.json apps/api/
 COPY apps/api/prisma apps/api/prisma
 USER appuser
 EXPOSE 3001
-CMD ["npx", "tsx", "apps/api/src/server.ts"]
+CMD ["node_modules/.bin/tsx", "apps/api/src/server.ts"]
