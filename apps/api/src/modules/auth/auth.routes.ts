@@ -6,8 +6,8 @@ import { AppError } from '../../errors/error-handler.js';
 export async function authRoutes(app: FastifyInstance) {
   const authService = new AuthService(app.env);
 
-  const emailSchema = z.object({ email: z.string().email() });
-  const emailCodeSchema = z.object({ email: z.string().email(), code: z.string().length(6) });
+  const emailSchema = z.object({ email: z.string().trim().toLowerCase().email() });
+  const emailCodeSchema = z.object({ email: z.string().trim().toLowerCase().email(), code: z.string().length(6) });
 
   app.post('/register/start', async (request, reply) => {
     const parsed = emailSchema.safeParse(request.body);

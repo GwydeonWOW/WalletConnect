@@ -5,10 +5,18 @@ import type { Env } from '@wallet-connect/config';
 
 const prisma = new PrismaClient();
 
+// Allow 2 windows (±60 seconds) for clock drift
+authenticator.options = { window: 2 };
+
 export class AuthService {
   constructor(private env: Env) {}
 
+  private normalize(email: string) {
+    return email.trim().toLowerCase();
+  }
+
   async registerStart(email: string) {
+    email = this.normalize(email);
     const user = await prisma.user.upsert({
       where: { email },
       update: {},
@@ -36,6 +44,7 @@ export class AuthService {
   }
 
   async registerVerify(email: string, code: string) {
+    email = this.normalize(email);
     const user = await prisma.user.findUnique({
       where: { email },
       include: { totpCredentials: true },
@@ -60,6 +69,7 @@ export class AuthService {
   }
 
   async loginStart(email: string) {
+    email = this.normalize(email);
     const user = await prisma.user.findUnique({
       where: { email },
       include: { totpCredentials: true },
@@ -78,6 +88,7 @@ export class AuthService {
   }
 
   async loginVerify(email: string, code: string) {
+    email = this.normalize(email);
     const user = await prisma.user.findUnique({
       where: { email },
       include: { totpCredentials: true },
