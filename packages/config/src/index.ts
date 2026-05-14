@@ -11,9 +11,6 @@ export const envSchema = z.object({
   ZERION_BASE_URL: z.string().default('https://api.zerion.io/v1'),
   SOLANA_RPC_URL: z.string().default('https://api.mainnet-beta.solana.com'),
   SUI_RPC_URL: z.string().default('https://fullnode.mainnet.sui.io:443'),
-  WEBAUTHN_RP_NAME: z.string().default('Wallet Connect'),
-  WEBAUTHN_RP_ID: z.string().default('localhost'),
-  WEBAUTHN_ORIGIN: z.string().default('http://localhost:3000'),
   SESSION_SECRET: z.string().default('change-me-in-production'),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
 });

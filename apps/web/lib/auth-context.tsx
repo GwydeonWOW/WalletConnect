@@ -10,8 +10,10 @@ interface AuthState {
 }
 
 interface AuthContextValue extends AuthState {
-  register: () => Promise<void>;
-  login: () => Promise<void>;
+  register: (email: string) => Promise<string | null>;
+  verifyRegistration: (email: string, code: string) => Promise<void>;
+  login: (email: string) => Promise<void>;
+  verifyLogin: (email: string, code: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -30,20 +32,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => setState({ userId: null, isLoading: false, isAuthenticated: false }));
   }, []);
 
-  const register = useCallback(async () => {
-    const { startRegistration } = await import('@simplewebauthn/browser');
-    const optionsRes = await api.registerOptions();
-    const credential = await startRegistration({ optionsJSON: optionsRes.data.options });
-    await api.registerVerify(optionsRes.data.userId, credential);
+  const register = useCallback(async (email: string) => {
+    const res = await api.registerStart(email);
+    return res.data.qrUrl;
+  }, []);
+
+  const verifyRegistration = useCallback(async (email: string, code: string) => {
+    await api.registerVerify(email, code);
     const me = await api.getMe();
     setState({ userId: me.data.id, isLoading: false, isAuthenticated: true });
   }, []);
 
-  const login = useCallback(async () => {
-    const { startAuthentication } = await import('@simplewebauthn/browser');
-    const optionsRes = await api.loginOptions();
-    const credential = await startAuthentication({ optionsJSON: optionsRes.data.options });
-    await api.loginVerify(credential);
+  const login = useCallback(async (email: string) => {
+    await api.loginStart(email);
+  }, []);
+
+  const verifyLogin = useCallback(async (email: string, code: string) => {
+    await api.loginVerify(email, code);
     const me = await api.getMe();
     setState({ userId: me.data.id, isLoading: false, isAuthenticated: true });
   }, []);
@@ -54,7 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...state, register, login, logout }}>
+    <AuthContext.Provider value={{ ...state, register, verifyRegistration, login, verifyLogin, logout }}>
       {children}
     </AuthContext.Provider>
   );

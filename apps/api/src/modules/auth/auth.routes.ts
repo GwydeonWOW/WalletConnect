@@ -1,5 +1,4 @@
 import { FastifyInstance } from 'fastify';
-import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { AuthService } from './auth.service.js';
 import { AppError } from '../../errors/error-handler.js';
@@ -7,84 +6,35 @@ import { AppError } from '../../errors/error-handler.js';
 export async function authRoutes(app: FastifyInstance) {
   const authService = new AuthService(app.env);
 
-  app.post('/passkeys/register/options', async (request, reply) => {
-    const userId = randomUUID();
-    try {
-      const options = await authService.generateRegistrationOptions(userId);
-      reply.send({
-        data: { userId, options },
-        meta: { requestId: request.id, servedAt: new Date().toISOString() },
-      });
-    } catch (err: any) {
-      request.log.error({ err }, 'Failed to generate registration options');
-      throw new AppError('INTERNAL_ERROR', 500, err.message);
-    }
-  });
+  const emailSchema = z.object({ email: z.string().email() });
+  const emailCodeSchema = z.object({ email: z.string().email(), code: z.string().length(6) });
 
-  const registerVerifySchema = z.object({
-    userId: z.string(),
-    credential: z.any(),
-  });
-
-  app.post('/passkeys/register/verify', async (request, reply) => {
-    const parsed = registerVerifySchema.safeParse(request.body);
+  app.post('/register/start', async (request, reply) => {
+    const parsed = emailSchema.safeParse(request.body);
     if (!parsed.success) {
       throw new AppError('VALIDATION_ERROR', 400, parsed.error.message);
     }
 
     try {
-      const result = await authService.verifyRegistration(
-        parsed.data.userId,
-        parsed.data.credential,
-      );
-
-      // Set session cookie
-      const sessionData = Buffer.from(
-        JSON.stringify({ userId: result.userId }),
-      ).toString('base64url');
-
-      reply.setCookie('session', sessionData, {
-        httpOnly: true,
-        secure: app.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/',
-        maxAge: 30 * 24 * 60 * 60, // 30 days
-      });
-
+      const result = await authService.registerStart(parsed.data.email);
       reply.send({
-        data: { verified: true, userId: result.userId },
+        data: result,
         meta: { requestId: request.id, servedAt: new Date().toISOString() },
       });
     } catch (err: any) {
+      request.log.error({ err }, 'Failed to start registration');
       throw new AppError('INTERNAL_ERROR', 500, err.message);
     }
   });
 
-  app.post('/passkeys/login/options', async (request, reply) => {
-    try {
-      const options = await authService.generateLoginOptions();
-      reply.send({
-        data: { options },
-        meta: { requestId: request.id, servedAt: new Date().toISOString() },
-      });
-    } catch (err: any) {
-      request.log.error({ err }, 'Failed to generate login options');
-      throw new AppError('INTERNAL_ERROR', 500, err.message);
-    }
-  });
-
-  const loginVerifySchema = z.object({
-    credential: z.any(),
-  });
-
-  app.post('/passkeys/login/verify', async (request, reply) => {
-    const parsed = loginVerifySchema.safeParse(request.body);
+  app.post('/register/verify', async (request, reply) => {
+    const parsed = emailCodeSchema.safeParse(request.body);
     if (!parsed.success) {
       throw new AppError('VALIDATION_ERROR', 400, parsed.error.message);
     }
 
     try {
-      const result = await authService.verifyLogin(parsed.data.credential);
+      const result = await authService.registerVerify(parsed.data.email, parsed.data.code);
 
       const sessionData = Buffer.from(
         JSON.stringify({ userId: result.userId }),
@@ -99,7 +49,54 @@ export async function authRoutes(app: FastifyInstance) {
       });
 
       reply.send({
-        data: { verified: true, userId: result.userId },
+        data: result,
+        meta: { requestId: request.id, servedAt: new Date().toISOString() },
+      });
+    } catch (err: any) {
+      throw new AppError('UNAUTHORIZED', 401, err.message);
+    }
+  });
+
+  app.post('/login/start', async (request, reply) => {
+    const parsed = emailSchema.safeParse(request.body);
+    if (!parsed.success) {
+      throw new AppError('VALIDATION_ERROR', 400, parsed.error.message);
+    }
+
+    try {
+      const result = await authService.loginStart(parsed.data.email);
+      reply.send({
+        data: result,
+        meta: { requestId: request.id, servedAt: new Date().toISOString() },
+      });
+    } catch (err: any) {
+      throw new AppError('UNAUTHORIZED', 401, err.message);
+    }
+  });
+
+  app.post('/login/verify', async (request, reply) => {
+    const parsed = emailCodeSchema.safeParse(request.body);
+    if (!parsed.success) {
+      throw new AppError('VALIDATION_ERROR', 400, parsed.error.message);
+    }
+
+    try {
+      const result = await authService.loginVerify(parsed.data.email, parsed.data.code);
+
+      const sessionData = Buffer.from(
+        JSON.stringify({ userId: result.userId }),
+      ).toString('base64url');
+
+      reply.setCookie('session', sessionData, {
+        httpOnly: true,
+        secure: app.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 30 * 24 * 60 * 60,
+      });
+
+      reply.send({
+        data: result,
         meta: { requestId: request.id, servedAt: new Date().toISOString() },
       });
     } catch (err: any) {

@@ -20,13 +20,17 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
 
 export const api = {
   // Auth
-  registerOptions: () => apiFetch<{ data: { userId: string; options: any } }>('/api/v1/auth/passkeys/register/options', { method: 'POST' }),
-  registerVerify: (userId: string, credential: any) => apiFetch('/api/v1/auth/passkeys/register/verify', {
-    method: 'POST', body: JSON.stringify({ userId, credential }),
+  registerStart: (email: string) => apiFetch<{ data: { qrUrl: string; email: string } }>('/api/v1/auth/register/start', {
+    method: 'POST', body: JSON.stringify({ email }),
   }),
-  loginOptions: () => apiFetch<{ data: { options: any } }>('/api/v1/auth/passkeys/login/options', { method: 'POST' }),
-  loginVerify: (credential: any) => apiFetch('/api/v1/auth/passkeys/login/verify', {
-    method: 'POST', body: JSON.stringify({ credential }),
+  registerVerify: (email: string, code: string) => apiFetch('/api/v1/auth/register/verify', {
+    method: 'POST', body: JSON.stringify({ email, code }),
+  }),
+  loginStart: (email: string) => apiFetch<{ data: { email: string } }>('/api/v1/auth/login/start', {
+    method: 'POST', body: JSON.stringify({ email }),
+  }),
+  loginVerify: (email: string, code: string) => apiFetch('/api/v1/auth/login/verify', {
+    method: 'POST', body: JSON.stringify({ email, code }),
   }),
   getMe: () => apiFetch<{ data: any }>('/api/v1/me'),
 

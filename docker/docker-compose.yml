@@ -40,9 +40,6 @@ services:
       ZERION_BASE_URL: '${ZERION_BASE_URL:-https://api.zerion.io/v1}'
       SOLANA_RPC_URL: '${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}'
       SUI_RPC_URL: '${SUI_RPC_URL:-https://fullnode.mainnet.sui.io:443}'
-      WEBAUTHN_RP_NAME: '${WEBAUTHN_RP_NAME:-Wallet Connect}'
-      WEBAUTHN_RP_ID: '${WEBAUTHN_RP_ID:-gwydeon.es}'
-      WEBAUTHN_ORIGIN: '${WEBAUTHN_ORIGIN:-https://wallet.gwydeon.es}'
       SESSION_SECRET: '${SESSION_SECRET:?SESSION_SECRET is required}'
       FRONTEND_URL: '${FRONTEND_URL:-https://wallet.gwydeon.es}'
     depends_on:

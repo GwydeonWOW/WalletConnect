@@ -62,24 +62,17 @@ model User {
   flowEvents       FlowEvent[]
   syncJobs         SyncJob[]
 
-  // WebAuthn credentials
-  passkeyCredentials PasskeyCredential[]
+  // TOTP credentials
+  totpCredentials TotpCredential[]
 }
 
-model PasskeyCredential {
-  id           String   @id @default(cuid())
-  userId       String
-  credentialId String   @unique
-  publicKey    Bytes
-  counter      Int
-  transports   String?
-  deviceType   String?
-  backedUp     Boolean  @default(false)
-  name         String?
-  createdAt    DateTime @default(now())
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
+model TotpCredential {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  secret    String
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model TrackedAddress {

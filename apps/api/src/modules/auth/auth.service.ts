@@ -1,135 +1,102 @@
-import {
-  generateRegistrationOptions,
-  verifyRegistrationResponse,
-  generateAuthenticationOptions,
-  verifyAuthenticationResponse,
-} from '@simplewebauthn/server';
-import type {
-  RegistrationResponseJSON,
-  AuthenticationResponseJSON,
-} from '@simplewebauthn/types';
+import { authenticator } from 'otplib';
+import QRCode from 'qrcode';
 import { PrismaClient } from '@prisma/client';
 import type { Env } from '@wallet-connect/config';
 
 const prisma = new PrismaClient();
 
-// In-memory challenge store (use Redis in production)
-const challenges = new Map<string, string>();
-
 export class AuthService {
   constructor(private env: Env) {}
 
-  async generateRegistrationOptions(userId: string) {
-    const options = await generateRegistrationOptions({
-      rpID: this.env.WEBAUTHN_RP_ID,
-      rpName: this.env.WEBAUTHN_RP_NAME,
-      userID: new TextEncoder().encode(userId),
-      userName: userId,
-      attestationType: 'none',
-      authenticatorSelection: {
-        residentKey: 'preferred',
-        userVerification: 'preferred',
-      },
+  async registerStart(email: string) {
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {},
+      create: { email },
     });
 
-    challenges.set(userId, options.challenge);
-    return options;
+    const existing = await prisma.totpCredential.findUnique({ where: { userId: user.id } });
+    if (existing?.verified) {
+      throw new Error('User already registered. Please login instead.');
+    }
+
+    const secret = authenticator.generateSecret();
+
+    await prisma.totpCredential.upsert({
+      where: { userId: user.id },
+      update: { secret, verified: false },
+      create: { userId: user.id, secret, verified: false },
+    });
+
+    const issuer = 'WalletConnect';
+    const uri = authenticator.keyuri(email, issuer, secret);
+    const qrUrl = await QRCode.toDataURL(uri);
+
+    return { qrUrl, email };
   }
 
-  async verifyRegistration(
-    userId: string,
-    credential: RegistrationResponseJSON,
-  ) {
-    const expectedChallenge = challenges.get(userId);
-    if (!expectedChallenge) {
-      throw new Error('No pending registration challenge found');
+  async registerVerify(email: string, code: string) {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { totpCredentials: true },
+    });
+
+    if (!user || user.totpCredentials.length === 0) {
+      throw new Error('No pending registration found. Start registration first.');
     }
 
-    const verification = await verifyRegistrationResponse({
-      response: credential,
-      expectedChallenge,
-      expectedOrigin: this.env.WEBAUTHN_ORIGIN,
-      expectedRPID: this.env.WEBAUTHN_RP_ID,
-    });
-
-    if (!verification.verified || !verification.registrationInfo) {
-      throw new Error('Registration verification failed');
+    const cred = user.totpCredentials[0];
+    const valid = authenticator.check(code, cred.secret);
+    if (!valid) {
+      throw new Error('Invalid verification code');
     }
 
-    const info = verification.registrationInfo;
-
-    // Create user if not exists, then store credential
-    const user = await prisma.user.upsert({
-      where: { id: userId },
-      update: {},
-      create: { id: userId },
+    await prisma.totpCredential.update({
+      where: { id: cred.id },
+      data: { verified: true },
     });
 
-    await prisma.passkeyCredential.create({
-      data: {
-        userId: user.id,
-        credentialId: info.credential.id,
-        publicKey: info.credential.publicKey,
-        counter: info.credential.counter,
-        transports: credential.response.transports?.join(','),
-        deviceType: info.credentialDeviceType,
-        backedUp: info.credentialBackedUp,
-        name: credential.response.transports?.[0] || 'Passkey',
-      },
-    });
-
-    challenges.delete(userId);
     return { verified: true, userId: user.id };
   }
 
-  async generateLoginOptions() {
-    const options = await generateAuthenticationOptions({
-      rpID: this.env.WEBAUTHN_RP_ID,
-      userVerification: 'preferred',
+  async loginStart(email: string) {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { totpCredentials: true },
     });
 
-    challenges.set('login', options.challenge);
-    return options;
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const verifiedCred = user.totpCredentials.find((c) => c.verified);
+    if (!verifiedCred) {
+      throw new Error('User not verified. Complete registration first.');
+    }
+
+    return { email };
   }
 
-  async verifyLogin(credential: AuthenticationResponseJSON) {
-    const expectedChallenge = challenges.get('login');
-    if (!expectedChallenge) {
-      throw new Error('No pending login challenge found');
-    }
-
-    const cred = await prisma.passkeyCredential.findUnique({
-      where: { credentialId: credential.id },
-      include: { user: true },
+  async loginVerify(email: string, code: string) {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { totpCredentials: true },
     });
 
-    if (!cred) {
-      throw new Error('Credential not found');
+    if (!user) {
+      throw new Error('User not found');
     }
 
-    const verification = await verifyAuthenticationResponse({
-      response: credential,
-      expectedChallenge,
-      expectedOrigin: this.env.WEBAUTHN_ORIGIN,
-      expectedRPID: this.env.WEBAUTHN_RP_ID,
-      credential: {
-        id: cred.credentialId,
-        publicKey: cred.publicKey,
-        counter: cred.counter,
-      },
-    });
-
-    if (!verification.verified) {
-      throw new Error('Login verification failed');
+    const verifiedCred = user.totpCredentials.find((c) => c.verified);
+    if (!verifiedCred) {
+      throw new Error('User not verified');
     }
 
-    // Update counter
-    await prisma.passkeyCredential.update({
-      where: { id: cred.id },
-      data: { counter: verification.authenticationInfo.newCounter },
-    });
+    const valid = authenticator.check(code, verifiedCred.secret);
+    if (!valid) {
+      throw new Error('Invalid verification code');
+    }
 
-    challenges.delete('login');
-    return { verified: true, userId: cred.userId };
+    return { verified: true, userId: user.id };
   }
 }
