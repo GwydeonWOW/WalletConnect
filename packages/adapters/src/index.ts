@@ -6,8 +6,6 @@ export { SolanaPortfolioAdapter } from './solana-native/solana-adapter.js';
 export { SolanaClient } from './solana-native/solana-client.js';
 export { SuiNativeAdapter } from './sui-native/sui-adapter.js';
 export { SuiDataClient } from './sui-native/sui-client.js';
-export { CoinGeckoClient } from './pricing-coingecko/coingecko-client.js';
-export { PriceService } from './pricing-coingecko/price-service.js';
 export { GeckoTerminalClient } from './pricing-geckoterminal/geckoterminal-client.js';
 export { GeckoPriceService } from './pricing-geckoterminal/gecko-price-service.js';
 export { mapUpstreamError } from './shared/error-mapper.js';
