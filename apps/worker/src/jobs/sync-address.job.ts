@@ -56,10 +56,7 @@ export async function syncAddress(addressId: string, userId: string): Promise<vo
 
     const enriched = await priceService.enrichMissingPrices(positions);
 
-    // Persist prices and assets
-    await priceService.persistPrices(enriched);
-
-    // Upsert positions
+    // Upsert assets, positions, and persist price history
     for (const pos of enriched) {
       const asset = await prisma.asset.upsert({
         where: { canonicalKey: pos.asset.canonicalKey },
@@ -78,6 +75,28 @@ export async function syncAddress(addressId: string, userId: string): Promise<vo
           decimals: pos.asset.decimals,
         },
       });
+
+      // Persist price point for history
+      if (pos.priceUsd && pos.priceSource !== 'none') {
+        await prisma.pricePoint.upsert({
+          where: {
+            assetId_quoteCurrency_source_quotedAt: {
+              assetId: asset.id,
+              quoteCurrency: 'USD',
+              source: pos.priceSource,
+              quotedAt: new Date(pos.priceAsOf || new Date()),
+            },
+          },
+          update: { price: new Decimal(pos.priceUsd) },
+          create: {
+            assetId: asset.id,
+            quoteCurrency: 'USD',
+            source: pos.priceSource,
+            quotedAt: new Date(pos.priceAsOf || new Date()),
+            price: new Decimal(pos.priceUsd),
+          },
+        }).catch(() => {});
+      }
 
       await prisma.currentPosition.upsert({
         where: {
