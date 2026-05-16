@@ -4,6 +4,14 @@ import { EvmRpcClient } from './evm-rpc-client.js';
 import { getTokenList } from './token-list.js';
 import { mapUpstreamError } from '../shared/error-mapper.js';
 
+const NATIVE_INFO: Record<string, { symbol: string; name: string }> = {
+  'eip155:1': { symbol: 'ETH', name: 'Ether' },
+  'eip155:56': { symbol: 'BNB', name: 'BNB' },
+  'eip155:137': { symbol: 'POL', name: 'Polygon' },
+  'eip155:42161': { symbol: 'ETH', name: 'Ether' },
+  'eip155:10': { symbol: 'ETH', name: 'Ether' },
+  'eip155:8453': { symbol: 'ETH', name: 'Ether' },
+};
 const NATIVE_DECIMALS = 18;
 
 export class EvmRpcAdapter implements PortfolioAdapter {
@@ -21,14 +29,15 @@ export class EvmRpcAdapter implements PortfolioAdapter {
       const nativeQuantity = formatTokenAmount(nativeWei, NATIVE_DECIMALS);
 
       if (nativeWei > 0n) {
+        const native = NATIVE_INFO[chainRef] ?? { symbol: 'ETH', name: 'Ether' };
         positions.push({
           asset: {
             canonicalKey: canonicalizeAsset({ ecosystem: 'evm', chainRef, isNative: true }),
             ecosystem: 'evm',
             chainRef,
             contractRef: null,
-            symbol: 'ETH',
-            name: 'Ether',
+            symbol: native.symbol,
+            name: native.name,
             decimals: NATIVE_DECIMALS,
           },
           quantity: nativeQuantity,

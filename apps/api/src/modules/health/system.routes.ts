@@ -7,9 +7,14 @@ export async function systemRoutes(app: FastifyInstance) {
       data: {
         providers: [
           {
-            name: 'coingecko',
-            configured: !!env.COINGECKO_API_KEY,
-            baseUrl: env.COINGECKO_BASE_URL,
+            name: 'evm-rpc (PublicNode)',
+            configured: true,
+            baseUrl: 'Public EVM RPC (free)',
+          },
+          {
+            name: 'geckoterminal',
+            configured: true,
+            baseUrl: 'Free pricing API',
           },
           {
             name: 'zerion',

@@ -2,6 +2,7 @@ import { Queue, Worker } from 'bullmq';
 import Redis from 'ioredis';
 import { loadEnv } from '@wallet-connect/config';
 import pino from 'pino';
+import { syncAddress } from './jobs/sync-address.job.js';
 
 const env = loadEnv();
 const logger = pino({
@@ -26,9 +27,7 @@ const syncWorker = new Worker(
     const { addressId, userId } = job.data;
     logger.info({ addressId, userId, jobId: job.id }, 'Processing sync-address job');
 
-    // TODO: Import and run adapter sync logic
-    // For now, log the job processing
-    logger.info({ addressId }, 'Sync job completed (stub)');
+    await syncAddress(addressId, userId);
     return { addressId, status: 'completed' };
   },
   {
