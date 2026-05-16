@@ -9,6 +9,7 @@ export const envSchema = z.object({
   COINGECKO_BASE_URL: z.string().default('https://api.coingecko.com/api/v3'),
   ZERION_API_KEY: z.string().optional(),
   ZERION_BASE_URL: z.string().default('https://api.zerion.io/v1'),
+  EVM_RPC_URL: z.string().optional(),
   SOLANA_RPC_URL: z.string().default('https://api.mainnet-beta.solana.com'),
   SUI_RPC_URL: z.string().default('https://fullnode.mainnet.sui.io:443'),
   SESSION_SECRET: z.string().default('change-me-in-production'),

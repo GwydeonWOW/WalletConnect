@@ -1,9 +1,10 @@
 import { PrismaClient } from '@prisma/client';
 import { loadEnv } from '@wallet-connect/config';
+import { EvmRpcAdapter, EvmRpcClient, getRpcUrl } from '@wallet-connect/adapters';
 import { EvmZerionAdapter, ZerionClient } from '@wallet-connect/adapters';
 import { SolanaPortfolioAdapter, SolanaClient } from '@wallet-connect/adapters';
 import { SuiNativeAdapter, SuiDataClient } from '@wallet-connect/adapters';
-import { CoinGeckoClient, PriceService } from '@wallet-connect/adapters';
+import { GeckoTerminalClient, GeckoPriceService } from '@wallet-connect/adapters';
 import Decimal from 'decimal.js';
 import pino from 'pino';
 
@@ -38,7 +39,7 @@ export async function syncAddress(addressId: string, userId: string): Promise<vo
 
   try {
     // Get adapter based on ecosystem
-    const adapter = getAdapter(address.ecosystem);
+    const adapter = getAdapter(address.ecosystem, address.chainRef);
     if (!adapter) {
       throw new Error(`No adapter for ecosystem: ${address.ecosystem}`);
     }
@@ -49,13 +50,9 @@ export async function syncAddress(addressId: string, userId: string): Promise<vo
       address.chainRef as any,
     );
 
-    // Enrich with prices
-    const priceService = new PriceService(
-      new CoinGeckoClient({
-        apiKey: env.COINGECKO_API_KEY,
-        baseUrl: env.COINGECKO_BASE_URL,
-      })
-    );
+    // Enrich with prices via GeckoTerminal (free, no API key needed)
+    const geckoClient = new GeckoTerminalClient();
+    const priceService = new GeckoPriceService(geckoClient);
 
     const enriched = await priceService.enrichMissingPrices(positions);
 
@@ -144,12 +141,14 @@ export async function syncAddress(addressId: string, userId: string): Promise<vo
   }
 }
 
-function getAdapter(ecosystem: string) {
+function getAdapter(ecosystem: string, chainRef: string) {
   switch (ecosystem) {
     case 'evm':
-      return env.ZERION_API_KEY
-        ? new EvmZerionAdapter(new ZerionClient({ apiKey: env.ZERION_API_KEY, baseUrl: env.ZERION_BASE_URL }))
-        : null;
+      // Prefer Zerion if API key is available, otherwise use free public RPC
+      if (env.ZERION_API_KEY) {
+        return new EvmZerionAdapter(new ZerionClient({ apiKey: env.ZERION_API_KEY, baseUrl: env.ZERION_BASE_URL }));
+      }
+      return new EvmRpcAdapter(new EvmRpcClient({ rpcUrl: getRpcUrl(chainRef) }));
     case 'solana':
       return new SolanaPortfolioAdapter(new SolanaClient({ rpcUrl: env.SOLANA_RPC_URL }));
     case 'sui':
