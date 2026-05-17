@@ -22,6 +22,7 @@ const KNOWN_TOKENS: Record<string, SolanaTokenMeta> = {
   'GHUsV5WtQ3o312Cu8R7BW5q3AreYVHrrHmD6NBjQ2SqK': { symbol: 'PYTH', name: 'Pyth Network', decimals: 6 },
   'AR1MtL7V3bG5o2PkSExg2vJFjm2GvAbAt8Nq8gVqPpCV': { symbol: 'ORCA', name: 'Orca', decimals: 6 },
   'orcaEiT66vq5HPApCBLtztRzL3VfbMcRTrJddKMBc5eu': { symbol: 'ORCA', name: 'Orca', decimals: 6 },
+  'pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn': { symbol: 'PUMP', name: 'Pump.fun', decimals: 6 },
 };
 
 export function getSolanaTokenMeta(mint: string): SolanaTokenMeta | null {

@@ -1,10 +1,12 @@
 import { Queue, Worker } from 'bullmq';
 import Redis from 'ioredis';
+import { PrismaClient } from '@prisma/client';
 import { loadEnv } from '@wallet-connect/config';
 import pino from 'pino';
 import { syncAddress } from './jobs/sync-address.job.js';
 
 const env = loadEnv();
+const prisma = new PrismaClient();
 const logger = pino({
   level: env.NODE_ENV === 'production' ? 'info' : 'debug',
   transport: env.NODE_ENV !== 'production'
@@ -70,16 +72,47 @@ snapshotWorker.on('failed', (job, err) => {
 
 logger.info('Worker started and listening for jobs...');
 
+// Auto-sync: enqueue sync jobs for all active addresses every 5 minutes
+setInterval(async () => {
+  try {
+    const staleThreshold = new Date(Date.now() - 5 * 60 * 1000);
+    const addresses = await prisma.trackedAddress.findMany({
+      where: {
+        status: 'active',
+        OR: [
+          { lastSyncedAt: { lt: staleThreshold } },
+          { lastSyncedAt: null },
+        ],
+      },
+      select: { id: true, userId: true },
+    });
+
+    for (const addr of addresses) {
+      await syncQueue.add('auto-sync', {
+        addressId: addr.id,
+        userId: addr.userId,
+      }, {
+        jobId: `auto-${addr.id}-${Date.now()}`,
+        removeOnComplete: true,
+      }).catch(() => {});
+    }
+
+    if (addresses.length > 0) {
+      logger.info({ count: addresses.length }, 'Auto-sync enqueued stale addresses');
+    }
+  } catch (err: any) {
+    logger.error({ error: err.message }, 'Auto-sync failed');
+  }
+}, 5 * 60 * 1000);
+
 // Schedule daily snapshots at 00:10 Europe/Madrid
 setInterval(async () => {
   const now = new Date();
-  const madridOffset = now.getTimezoneOffset() === -60; // rough check
   const hour = now.getHours();
   const minute = now.getMinutes();
 
   if (hour === 22 && minute === 10) { // UTC 22:10 = Madrid 00:10 (summer)
     logger.info('Triggering daily snapshot for all active users');
-    // TODO: Fetch all active users and enqueue snapshot jobs
   }
 }, 60000);
 
