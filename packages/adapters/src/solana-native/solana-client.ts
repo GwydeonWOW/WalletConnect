@@ -39,24 +39,24 @@ export class SolanaClient {
   }
 
   async getTokenAccountsByOwner(address: string): Promise<any[]> {
-    const [classic, token2022] = await Promise.allSettled([
-      this.call('getTokenAccountsByOwner', [
-        address,
-        { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' },
-        { encoding: 'jsonParsed' },
-      ]),
-      this.call('getTokenAccountsByOwner', [
-        address,
-        { programId: 'TokenzQdBNb4qKCdPVT5Buy4R2psNu6DE6FPtGiXY3rQ' },
-        { encoding: 'jsonParsed' },
-      ]),
-    ]);
+    // Standard Token program — works fine with programId filter
+    const classic = await this.call('getTokenAccountsByOwner', [
+      address,
+      { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' },
+      { encoding: 'jsonParsed' },
+    ]).catch(() => ({ value: [] }));
 
-    const accounts = [
-      ...(classic.status === 'fulfilled' ? classic.value?.value || [] : []),
-      ...(token2022.status === 'fulfilled' ? token2022.value?.value || [] : []),
-    ];
-    return accounts;
+    return classic?.value || [];
+  }
+
+  async getTokenAccountByMint(address: string, mint: string): Promise<any[]> {
+    const result = await this.call('getTokenAccountsByOwner', [
+      address,
+      { mint },
+      { encoding: 'jsonParsed' },
+    ]).catch(() => ({ value: [] }));
+
+    return result?.value || [];
   }
 
   async getSignatures(address: string, limit = 50): Promise<any[]> {

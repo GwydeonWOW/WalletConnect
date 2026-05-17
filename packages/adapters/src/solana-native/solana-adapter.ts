@@ -1,7 +1,7 @@
 import type { PortfolioAdapter, NormalizedPosition, NormalizedActivity, ChainRef } from '@wallet-connect/domain';
 import { canonicalizeAsset } from '@wallet-connect/domain';
 import { SolanaClient } from './solana-client.js';
-import { getSolanaTokenMeta } from './token-registry.js';
+import { getSolanaTokenMeta, TOKEN2022_MINTS } from './token-registry.js';
 import { mapUpstreamError } from '../shared/error-mapper.js';
 
 export class SolanaPortfolioAdapter implements PortfolioAdapter {
@@ -36,9 +36,25 @@ export class SolanaPortfolioAdapter implements PortfolioAdapter {
         });
       }
 
-      // SPL token balances
+      // SPL token balances (standard Token program)
       const tokenAccounts = await this.client.getTokenAccountsByOwner(address);
-      for (const account of tokenAccounts) {
+
+      // Token-2022 balances — public RPC doesn't support programId filter for Token-2022,
+      // so query each known Token-2022 mint individually
+      const token2022Accounts = await Promise.all(
+        TOKEN2022_MINTS.map((mint) => this.client.getTokenAccountByMint(address, mint)),
+      );
+      const allAccounts = [...tokenAccounts, ...token2022Accounts.flat()];
+
+      // Deduplicate by mint address
+      const seen = new Set<string>();
+      const uniqueAccounts = allAccounts.filter((account) => {
+        const mint = account.account?.data?.parsed?.info?.mint;
+        if (!mint || seen.has(mint)) return false;
+        seen.add(mint);
+        return true;
+      });
+      for (const account of uniqueAccounts) {
         const info = account.account?.data?.parsed?.info;
         if (!info || info.tokenAmount?.uiAmount === 0) continue;
 

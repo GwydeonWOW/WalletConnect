@@ -25,6 +25,11 @@ const KNOWN_TOKENS: Record<string, SolanaTokenMeta> = {
   'pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn': { symbol: 'PUMP', name: 'Pump.fun', decimals: 6 },
 };
 
+// Token-2022 mints that the public RPC won't return via programId filter
+export const TOKEN2022_MINTS: string[] = [
+  'pumpCmXqMfrsAkQ5r49WcJnRayYRqmXz6ae8H7H9Dfn', // PUMP
+];
+
 export function getSolanaTokenMeta(mint: string): SolanaTokenMeta | null {
   return KNOWN_TOKENS[mint] ?? null;
 }
