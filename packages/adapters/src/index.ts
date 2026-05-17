@@ -2,6 +2,7 @@ export { EvmZerionAdapter } from './evm-zerion/evm-zerion-adapter.js';
 export { ZerionClient } from './evm-zerion/zerion-client.js';
 export { EvmRpcAdapter } from './evm-rpc/evm-rpc-adapter.js';
 export { EvmRpcClient } from './evm-rpc/evm-rpc-client.js';
+export { getRpcUrl } from './evm-rpc/chain-rpcs.js';
 export { SolanaPortfolioAdapter } from './solana-native/solana-adapter.js';
 export { SolanaClient } from './solana-native/solana-client.js';
 export { SuiNativeAdapter } from './sui-native/sui-adapter.js';
