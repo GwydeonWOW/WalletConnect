@@ -1,6 +1,7 @@
 import type { PortfolioAdapter, NormalizedPosition, NormalizedActivity, ChainRef } from '@wallet-connect/domain';
 import { canonicalizeAsset } from '@wallet-connect/domain';
 import { SolanaClient } from './solana-client.js';
+import { getSolanaTokenMeta } from './token-registry.js';
 import { mapUpstreamError } from '../shared/error-mapper.js';
 
 export class SolanaPortfolioAdapter implements PortfolioAdapter {
@@ -42,17 +43,21 @@ export class SolanaPortfolioAdapter implements PortfolioAdapter {
         if (!info || info.tokenAmount?.uiAmount === 0) continue;
 
         const mint = info.mint;
+        const meta = getSolanaTokenMeta(mint);
+        const decimals = info.tokenAmount?.decimals ?? meta?.decimals ?? 0;
+        const quantity = info.tokenAmount?.uiAmountString ?? String(info.tokenAmount?.uiAmount ?? '0');
+
         positions.push({
           asset: {
             canonicalKey: canonicalizeAsset({ ecosystem: 'solana', chainRef, mint }),
             ecosystem: 'solana',
             chainRef,
             contractRef: mint,
-            symbol: null,
-            name: null,
-            decimals: info.tokenAmount?.decimals || null,
+            symbol: meta?.symbol ?? mint.slice(0, 4) + '...',
+            name: meta?.name ?? `Unknown (${mint.slice(0, 8)}...)`,
+            decimals,
           },
-          quantity: String(info.tokenAmount?.amount || '0'),
+          quantity,
           priceUsd: null,
           valueUsd: null,
           priceSource: 'none',
