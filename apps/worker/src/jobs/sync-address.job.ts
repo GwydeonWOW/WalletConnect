@@ -53,7 +53,7 @@ export async function syncAddress(addressId: string, userId: string): Promise<vo
       );
     } catch (err: any) {
       if (env.ZERION_API_KEY && address.ecosystem === 'evm') {
-        logger.warn({ addressId, error: err.message }, 'Zerion failed, falling back to free RPC');
+        logger.warn({ addressId, error: err.message, status: err.status }, 'Zerion failed, falling back to free RPC');
         adapter = new EvmRpcAdapter(new EvmRpcClient({ rpcUrl: getRpcUrl(address.chainRef) }));
         positions = await adapter.getCurrentPositions(
           address.addressNormalized,

@@ -34,6 +34,10 @@ export class SuiNativeAdapter implements PortfolioAdapter {
           } catch {}
         }
 
+        const rawBalance = BigInt(b.quantity || '0');
+        const dec = decimals ?? 9;
+        const quantity = formatBigInt(rawBalance, dec);
+
         positions.push({
           asset: {
             canonicalKey: canonicalizeAsset({ ecosystem: 'sui', chainRef, coinType: b.coinType }),
@@ -42,9 +46,9 @@ export class SuiNativeAdapter implements PortfolioAdapter {
             contractRef: b.coinType,
             symbol,
             name,
-            decimals,
+            decimals: dec,
           },
-          quantity: b.quantity,
+          quantity,
           priceUsd: null,
           valueUsd: null,
           priceSource: 'none',
@@ -71,6 +75,14 @@ export class SuiNativeAdapter implements PortfolioAdapter {
   async getHistoricalNetWorth(): Promise<null> {
     return null;
   }
+}
+
+function formatBigInt(raw: bigint, decimals: number): string {
+  const divisor = 10n ** BigInt(decimals);
+  const whole = raw / divisor;
+  const fraction = raw % divisor;
+  const fractionStr = fraction.toString().padStart(decimals, '0').replace(/0+$/, '');
+  return fractionStr ? `${whole}.${fractionStr}` : whole.toString();
 }
 
 function mapSuiActivity(tx: any): NormalizedActivity {
