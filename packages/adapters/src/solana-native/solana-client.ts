@@ -39,12 +39,24 @@ export class SolanaClient {
   }
 
   async getTokenAccountsByOwner(address: string): Promise<any[]> {
-    const result = await this.call('getTokenAccountsByOwner', [
-      address,
-      { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' },
-      { encoding: 'jsonParsed' },
+    const [classic, token2022] = await Promise.allSettled([
+      this.call('getTokenAccountsByOwner', [
+        address,
+        { programId: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' },
+        { encoding: 'jsonParsed' },
+      ]),
+      this.call('getTokenAccountsByOwner', [
+        address,
+        { programId: 'TokenzQdBNb4qKCdPVT5Buy4R2psNu6DE6FPtGiXY3rQ' },
+        { encoding: 'jsonParsed' },
+      ]),
     ]);
-    return result?.value || [];
+
+    const accounts = [
+      ...(classic.status === 'fulfilled' ? classic.value?.value || [] : []),
+      ...(token2022.status === 'fulfilled' ? token2022.value?.value || [] : []),
+    ];
+    return accounts;
   }
 
   async getSignatures(address: string, limit = 50): Promise<any[]> {

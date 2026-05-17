@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { loadEnv } from '@wallet-connect/config';
 import { EvmRpcAdapter, EvmRpcClient, getRpcUrl } from '@wallet-connect/adapters';
+import { EvmZerionAdapter, ZerionClient } from '@wallet-connect/adapters';
 import { SolanaPortfolioAdapter, SolanaClient } from '@wallet-connect/adapters';
 import { SuiNativeAdapter, SuiDataClient } from '@wallet-connect/adapters';
 import { GeckoTerminalClient, GeckoPriceService } from '@wallet-connect/adapters';
@@ -162,6 +163,13 @@ export async function syncAddress(addressId: string, userId: string): Promise<vo
 function getAdapter(ecosystem: string, chainRef: string) {
   switch (ecosystem) {
     case 'evm':
+      if (env.ZERION_API_KEY) {
+        try {
+          return new EvmZerionAdapter(new ZerionClient({ apiKey: env.ZERION_API_KEY, baseUrl: env.ZERION_BASE_URL }));
+        } catch {
+          logger.warn('Zerion init failed, falling back to free RPC');
+        }
+      }
       return new EvmRpcAdapter(new EvmRpcClient({ rpcUrl: getRpcUrl(chainRef) }));
     case 'solana':
       return new SolanaPortfolioAdapter(new SolanaClient({ rpcUrl: env.SOLANA_RPC_URL }));

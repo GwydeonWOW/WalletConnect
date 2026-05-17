@@ -24,6 +24,7 @@ const CHAIN_MAP: Record<string, string> = {
   'eip155:100': 'xdai',
   'eip155:250': 'fantom',
   'solana:mainnet': 'solana',
+  'sui:mainnet': 'sui-network',
 };
 
 export class GeckoTerminalClient {
@@ -68,6 +69,7 @@ export class GeckoTerminalClient {
       'eip155:8453': '0x4200000000000000000000000000000000000006',
       'eip155:56': '0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c',
       'solana:mainnet': 'So11111111111111111111111111111111111111112',
+      'sui:mainnet': '0x2::sui::SUI',
     };
 
     const wrapped = wrappedTokens[chainRef];
