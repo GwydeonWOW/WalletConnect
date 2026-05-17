@@ -1,6 +1,6 @@
 import type { Ecosystem } from '@wallet-connect/domain';
 
-export interface UpstreamError {
+export interface UpstreamError extends Error {
   code: string;
   httpStatus: number;
   retryable: boolean;
@@ -14,42 +14,44 @@ export function mapUpstreamError(
   provider: string,
   ecosystem: Ecosystem,
 ): UpstreamError {
+  const message = err?.message || `Upstream error from ${provider}`;
+
   if (err?.kind === 'RATE_LIMIT' || err?.status === 429) {
-    return {
-      code: 'UPSTREAM_RATE_LIMITED',
-      httpStatus: 503,
-      retryable: true,
-      retryAfterSec: err?.retryAfterSec ?? 30,
-      provider,
-      ecosystem,
-    };
+    const error = new Error(message) as UpstreamError;
+    error.code = 'UPSTREAM_RATE_LIMITED';
+    error.httpStatus = 503;
+    error.retryable = true;
+    error.retryAfterSec = err?.retryAfterSec ?? 30;
+    error.provider = provider;
+    error.ecosystem = ecosystem;
+    return error;
   }
 
   if (err?.kind === 'NOT_SUPPORTED' || err?.status === 501) {
-    return {
-      code: 'UPSTREAM_NOT_SUPPORTED',
-      httpStatus: 501,
-      retryable: false,
-      provider,
-      ecosystem,
-    };
+    const error = new Error(message) as UpstreamError;
+    error.code = 'UPSTREAM_NOT_SUPPORTED';
+    error.httpStatus = 501;
+    error.retryable = false;
+    error.provider = provider;
+    error.ecosystem = ecosystem;
+    return error;
   }
 
   if (err?.kind === 'INVALID_ADDRESS' || err?.status === 400) {
-    return {
-      code: 'VALIDATION_ERROR',
-      httpStatus: 400,
-      retryable: false,
-      provider,
-      ecosystem,
-    };
+    const error = new Error(message) as UpstreamError;
+    error.code = 'VALIDATION_ERROR';
+    error.httpStatus = 400;
+    error.retryable = false;
+    error.provider = provider;
+    error.ecosystem = ecosystem;
+    return error;
   }
 
-  return {
-    code: 'UPSTREAM_TEMPORARY',
-    httpStatus: 503,
-    retryable: true,
-    provider,
-    ecosystem,
-  };
+  const error = new Error(message) as UpstreamError;
+  error.code = 'UPSTREAM_TEMPORARY';
+  error.httpStatus = 503;
+  error.retryable = true;
+  error.provider = provider;
+  error.ecosystem = ecosystem;
+  return error;
 }
