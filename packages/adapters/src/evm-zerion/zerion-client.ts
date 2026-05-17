@@ -18,7 +18,7 @@ export class ZerionClient {
     chainRef: string;
     freshness?: string;
   }): Promise<any> {
-    const url = `${this.config.baseUrl}/wallets/${params.address}/positions`;
+    const url = `${this.config.baseUrl}/wallets/${params.address}/positions/`;
     const response = await fetch(url, { headers: this.headers });
 
     if (!response.ok) {
@@ -49,7 +49,7 @@ export class ZerionClient {
     from: string;
     to: string;
   }): Promise<any> {
-    const url = `${this.config.baseUrl}/wallets/${params.address}/transactions`;
+    const url = `${this.config.baseUrl}/wallets/${params.address}/transactions/`;
     const response = await fetch(url, {
       headers: this.headers,
     });
@@ -69,7 +69,7 @@ export class ZerionClient {
     from: string;
     to: string;
   }): Promise<any> {
-    const url = `${this.config.baseUrl}/wallets/${params.address}/portfolio`;
+    const url = `${this.config.baseUrl}/wallets/${params.address}/portfolio/`;
     const response = await fetch(url, { headers: this.headers });
 
     if (!response.ok) {

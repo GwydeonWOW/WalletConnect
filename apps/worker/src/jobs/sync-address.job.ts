@@ -39,16 +39,30 @@ export async function syncAddress(addressId: string, userId: string): Promise<vo
 
   try {
     // Get adapter based on ecosystem
-    const adapter = getAdapter(address.ecosystem, address.chainRef);
+    let adapter = getAdapter(address.ecosystem, address.chainRef);
     if (!adapter) {
       throw new Error(`No adapter for ecosystem: ${address.ecosystem}`);
     }
 
-    // Fetch positions
-    const positions = await adapter.getCurrentPositions(
-      address.addressNormalized,
-      address.chainRef as any,
-    );
+    // Fetch positions (with fallback from Zerion to free RPC)
+    let positions: any[] = [];
+    try {
+      positions = await adapter.getCurrentPositions(
+        address.addressNormalized,
+        address.chainRef as any,
+      );
+    } catch (err: any) {
+      if (env.ZERION_API_KEY && address.ecosystem === 'evm') {
+        logger.warn({ addressId, error: err.message }, 'Zerion failed, falling back to free RPC');
+        adapter = new EvmRpcAdapter(new EvmRpcClient({ rpcUrl: getRpcUrl(address.chainRef) }));
+        positions = await adapter.getCurrentPositions(
+          address.addressNormalized,
+          address.chainRef as any,
+        );
+      } else {
+        throw err;
+      }
+    }
 
     // Enrich with prices via GeckoTerminal (free, no API key needed)
     const geckoClient = new GeckoTerminalClient();
