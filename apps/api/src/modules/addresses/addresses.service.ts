@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { canonicalizeAddress } from '@wallet-connect/domain';
 import type { ImportAddressRequest } from '@wallet-connect/domain';
+import { syncQueue } from '../../queue.js';
 
 const prisma = new PrismaClient();
 
@@ -56,7 +57,7 @@ export class AddressService {
       },
     });
 
-    // Create sync job
+    // Create sync job in DB + enqueue to BullMQ
     const syncJob = await prisma.syncJob.create({
       data: {
         userId,
@@ -66,6 +67,8 @@ export class AddressService {
         trigger: data.importMode === 'wallet_connect' ? 'wallet_connect' : 'manual',
       },
     });
+
+    await syncQueue.add('sync-address', { addressId: address.id, userId }, { jobId: syncJob.id });
 
     return {
       addressId: address.id,
@@ -118,7 +121,7 @@ export class AddressService {
 
     if (!address) return null;
 
-    return prisma.syncJob.create({
+    const syncJob = await prisma.syncJob.create({
       data: {
         userId,
         trackedAddressId: address.id,
@@ -127,5 +130,9 @@ export class AddressService {
         trigger: 'manual',
       },
     });
+
+    await syncQueue.add('sync-address', { addressId: address.id, userId }, { jobId: syncJob.id });
+
+    return syncJob;
   }
 }
